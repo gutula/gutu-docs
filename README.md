@@ -21,6 +21,8 @@ plugin-driven.
 | [docs/PLUGIN-DEVELOPMENT.md](./docs/PLUGIN-DEVELOPMENT.md) | You're building a plugin (backend + frontend + UI/UX + testing + distribution) |
 | [docs/HOST-SDK-REFERENCE.md](./docs/HOST-SDK-REFERENCE.md) | You need to know what `@gutu-host` exports — every function, every type |
 | [docs/UI-UX-GUIDELINES.md](./docs/UI-UX-GUIDELINES.md) | You're building admin pages — design tokens, components, accessibility |
+| [docs/PAGE-DESIGN-SYSTEM.md](./docs/PAGE-DESIGN-SYSTEM.md) | You're designing a plugin's pages — 12 archetypes, slots, widgets, performance contract |
+| [docs/page-design/](./docs/page-design/README.md) | You want the per-plugin page plan — 75 briefs, 8 flagships at full depth |
 | [docs/TESTING.md](./docs/TESTING.md) | You're writing tests — the four shell suites and plugin-author harness |
 | [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) | You're sending a PR — code style, commit format, review process |
 | [PLUGIN_AUTHORING.md](./PLUGIN_AUTHORING.md) | Quickstart for plugin authors (legacy short version — see PLUGIN-DEVELOPMENT.md for depth) |
