@@ -944,3 +944,6 @@ frontmatter. Briefs older than the current major version trigger a
 docs-CI warning.
 
 Current version: **1.0** (2026-04-26).
+
+For the runtime API and recipes that implement this design contract,
+see [`PAGE-DESIGN-IMPLEMENTATION.md`](./PAGE-DESIGN-IMPLEMENTATION.md).
