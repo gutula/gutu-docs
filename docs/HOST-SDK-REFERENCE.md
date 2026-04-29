@@ -118,6 +118,7 @@ interface HostPlugin {
   dependsOn?: Array<string | { id: string; versionRange: string }>;
   provides?: string[];
   consumes?: string[];
+  resources?: ReadonlyArray<UiResourceDescriptor | string>;
   install?(ctx: PluginContext): void | Promise<void>;
   migrate?(): void | Promise<void>;
   seed?(opts: { force: boolean }): void | Promise<void>;
@@ -166,6 +167,35 @@ Topo-sorted at load. Cycles throw.
 #### `provides: string[]`, `consumes: string[]`
 Capability namespace. Validated at boot (consumers without providers
 throw). See `PLUGIN-DEVELOPMENT.md` §8.
+
+#### `resources?: ReadonlyArray<UiResourceDescriptor | string>`
+Declarative list of record-shaped entities the plugin owns. Auto-
+registered into the UI metadata catalog at `loadPlugins()` time and
+feeds the host's resource-write gate's dynamic namespace allow-list.
+
+```ts
+resources: [
+  // Bare-string shorthand → `{ id: <string> }`
+  "fleet.vehicle",
+  "fleet.driver",
+  // Full descriptor for fields the host can't infer
+  {
+    id: "fleet.telemetry-event",
+    label: "Telemetry event",
+    group: "Fleet",
+    actions: ["read"],
+  },
+],
+```
+
+The id MUST match `<plugin>.<entity>` (lowercase, optional hyphens).
+Anything else is dropped at boot with a `[plugin-host] ... skipping`
+warning. Without this declaration, POSTs to a fresh DB return 404
+until a record exists for the resource (the lazy bootstrap discovers
+it from the records table).
+
+Plugins without resources (cross-cutting like `favorites-core`,
+`record-links-core`, `timeline-core`) just omit the field.
 
 #### `install(ctx): void | Promise<void>`
 One-shot. Tracked in `meta` table under `plugin:installed:<id>@<version>`.

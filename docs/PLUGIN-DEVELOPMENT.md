@@ -166,6 +166,22 @@ export const hostPlugin: HostPlugin = {
   provides: ["fleet.dispatch"],
   consumes: ["notifications.dispatch", "workflow.trigger"],
 
+  // ─── Resources owned by this plugin ────────────────────────
+  // Auto-registered into the UI catalog at loadPlugins() time.
+  // Bare strings are shorthand for `{ id: <string> }`. Ids MUST match
+  // `<plugin>.<entity>` (lowercase, optional hyphens).
+  resources: [
+    "fleet.vehicle",
+    "fleet.driver",
+    "fleet.route",
+    {
+      id: "fleet.telemetry-event",
+      label: "Telemetry event",
+      group: "Fleet",
+      actions: ["read"],
+    },
+  ],
+
   // ─── Lifecycle hooks (all optional) ────────────────────────
 
   // Schema. Idempotent. Runs every boot.

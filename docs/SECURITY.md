@@ -106,12 +106,13 @@ Two-layer model:
 
 ### 3.1 RBAC (role-based)
 
-- `users.role`: `admin` | `member`
-- Admins can: manage users, manage tenants, install plugins, run GDPR
-  fan-outs, see audit log, see metrics
-- Members can: do everything else (subject to ACL)
+- `users.role`: `owner` | `admin` | `member` | `viewer`
+- Admins/owners can: manage users, manage tenants, install plugins,
+  run GDPR fan-outs, see audit log, see metrics
+- Members can: read/write own and tenant-shared records (subject to ACL)
+- Viewers can: read only — never mutate, regardless of per-record ACL
 
-Every operator-only endpoint checks `currentUser(c).role !== "admin"`.
+Every operator-only endpoint checks `currentUser(c).role`.
 
 ### 3.2 Per-record ACL
 
@@ -126,6 +127,54 @@ are `owner > editor > viewer`. Subjects are `user`, `tenant`,
 The resource router pipes `accessibleRecordIds` into SQL `IN` clauses
 so list pagination + total count are correct against the user's
 filtered universe.
+
+### 3.3 Global-role clamp on `effectiveRole`
+
+The user's tenant role acts as a **ceiling** on the per-record role
+the ACL grants:
+
+| `users.role`      | Maximum effective role per record |
+|-------------------|-----------------------------------|
+| `owner` / `admin` | `owner`                           |
+| `member`          | `editor`                          |
+| `viewer`          | `viewer`                          |
+| (anything else)   | `viewer`                          |
+
+This defends the "viewer = read-only across the workspace" promise.
+Without the clamp, `seedDefaultAcl`'s `(tenant, editor)` row would
+let a global viewer mutate any record in their tenant. With it,
+the global viewer is held to viewer regardless of ACL.
+
+The clamp is wired through:
+- `routes/resources.ts` `requireRecordRole()` — every read/write/delete
+- `routes/resources.ts` list annotator — every row's surfaced `role` field
+- `main.ts` `resolveYjsSession()` — Yjs document-edit upgrade
+
+A POST without an existing record (no ACL row to clamp against) is
+gated separately by `requireGlobalRole(c, "editor")`, which rejects
+viewers at 403 before any ACL lookup runs.
+
+### 3.4 Resource-write catalog gate
+
+POST/PATCH/PUT/DELETE/restore/destroy on `/api/resources/:resource/...`
+require the resource id to either:
+
+1. Be in the UI catalog (registered via `HostPlugin.resources` at
+   `loadPlugins()` time, or discovered from the records table).
+2. Match the `<plugin>.<entity>` pattern AND have its namespace in
+   the dynamic allow-list (the union of namespaces every loaded
+   plugin declared at least one resource in).
+
+Anything else returns 404. This stops authenticated clients from
+spamming the records table with arbitrary resource names like
+`fake.unknown` or `totallymadeup`.
+
+### 3.5 Date validator
+
+POST/PATCH/PUT also reject calendar-impossible dates
+(`"2024-02-30T00:00:00Z"`) at the boundary, before the row is
+written. JS's `Date` constructor silently rolls these forward to the
+next valid day; we'd rather fail loud.
 
 ### 3.3 Per-tenant plugin gate
 

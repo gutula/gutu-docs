@@ -241,6 +241,14 @@ At boot, `loadDiscoveredPlugins()` (from `host/discover.ts`) tries:
 Each entry is `await import(spec)` — Bun resolves via tsconfig paths in
 dev, npm-resolved in prod. The loader takes the `hostPlugin` named export.
 
+Alongside the discovered set, `main.ts` also appends an in-process
+synthetic plugin (`host/example-app-plugin.ts`) that declares the
+resources owned by the bundled example application (CRM, Booking,
+Support, Projects, Quality, etc.). This keeps the catalog model
+uniform — every resource id traces back to a `HostPlugin.resources[]`
+declaration. Drop the example app from the build and that plugin
+disappears with it; the resource-write gate adapts automatically.
+
 ### Frontend
 ```
 admin-panel/package.json
@@ -277,6 +285,12 @@ time — Vite must see the imports for tree-shaking. Adding a UI plugin:
 8.  installPluginsIfNeeded(orderedPlugins)    # one-shot install hooks
 9.  registerPluginWsRoutes(orderedPlugins)    # WS routing table
 10. setActivePlugins(orderedPlugins)          # /api/_plugins awareness
+
+# Inside loadPlugins (step 5), the host also calls
+# registerUiResource() for every entry in each plugin's `resources[]`
+# field, capturing the namespace into the resource-write gate's
+# dynamic allow-list. No imperative start() call is needed — the
+# catalog is primed BEFORE migrate, install, or any HTTP request.
 11. ensureDefaultTenant() + migrateTenantSchema
 12. bootstrapStorage()                        # storage adapter registry
 13. createApp()                               # Hono with middleware
